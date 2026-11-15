@@ -1,0 +1,24 @@
+# Example input for the toy scorer. Only `text` is required; every prediction
+# you omit falls back to a made-up default (and the output says so).
+text: "Just put my lap times from the sim into a spreadsheet and I am slower than I thought. Full data in the reply."
+
+# Your guesses for the per-viewer probabilities the real ranker would predict.
+# Probability heads are in [0, 1]; cont_dwell_time / cont_click_dwell_time are
+# expected seconds.
+predictions:
+  favorite: 0.03
+  reply: 0.004        # the "full data in the reply" bait, weighted 5.0
+  retweet: 0.005
+  quote: 0.001
+  share: 0.002
+  click: 0.02
+  dwell: 0.35
+  cont_dwell_time: 5.0
+  report: 0.00002
+  not_dwelled: 0.4
+
+flags:
+  in_network: true
+  is_mutual_follow_author: false
+  vqv_eligible: false
+  quoted_vqv_eligible: false
