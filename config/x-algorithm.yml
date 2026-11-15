@@ -1,0 +1,198 @@
+# Public weights and feature switches mirrored from xai-org/x-algorithm.
+#
+# Every value below was read directly from the upstream source at the commit
+# recorded in `source`. The `param` field is the upstream feature-switch key
+# and `file` is the path inside the upstream repo where the default is defined.
+#
+# IMPORTANT: these weights multiply *per-viewer model-predicted probabilities*
+# (P(like), P(reply), ...) produced by models nobody outside X has. A score
+# computed from guessed probabilities is a toy, not a prediction.
+
+source:
+  repo: https://github.com/xai-org/x-algorithm
+  commit: 30647a85a20cbdd114169beb9973680c4dc4f401
+  commit_date: "2026-11-14"
+  synced_at: "2026-11-15"
+  files:
+    - home-mixer/params/param.rs   # engagement weights, VMRanker* switches
+    - vm-ranker/params.rs          # Dpp* switches
+
+# Engagement-head weights. Each multiplies the predicted probability of that
+# action (or a continuous prediction such as expected dwell seconds).
+# Source: home-mixer/params/param.rs (used by home-mixer/scorers/value_model.rs
+# to build ValueModelWeights, summed in xai-value-model/scoring.rs).
+weights:
+  favorite:
+    value: 0.708
+    param: rust_home_mixer_favorite_weight
+    file: home-mixer/params/param.rs
+  reply:
+    value: 5.0
+    param: rust_home_mixer_reply_weight
+    file: home-mixer/params/param.rs
+  retweet:
+    value: 1.0
+    param: rust_home_mixer_retweet_weight
+    file: home-mixer/params/param.rs
+  photo_expand:
+    value: 0.05
+    param: rust_home_mixer_photo_expand_weight
+    file: home-mixer/params/param.rs
+  video_open:
+    value: 0.0
+    param: rust_home_mixer_video_open_weight
+    file: home-mixer/params/param.rs
+  click:
+    value: 0.274
+    param: rust_home_mixer_click_weight
+    file: home-mixer/params/param.rs
+  open_link:
+    value: 0.2
+    param: rust_home_mixer_open_link_weight
+    file: home-mixer/params/param.rs
+  profile_click:
+    value: 0.0
+    param: rust_home_mixer_profile_click_weight
+    file: home-mixer/params/param.rs
+  vqv:
+    value: 0.0
+    param: rust_home_mixer_vqv_weight
+    file: home-mixer/params/param.rs
+  share:
+    value: 2.118
+    param: rust_home_mixer_share_weight
+    file: home-mixer/params/param.rs
+  share_via_dm:
+    value: 5.0
+    param: rust_home_mixer_share_via_dm_weight
+    file: home-mixer/params/param.rs
+  share_via_copy_link:
+    value: 0.0
+    param: rust_home_mixer_share_via_copy_link_weight
+    file: home-mixer/params/param.rs
+  dwell:
+    value: 0.05
+    param: rust_home_mixer_dwell_weight
+    file: home-mixer/params/param.rs
+  quote:
+    value: 5.0
+    param: rust_home_mixer_quote_weight
+    file: home-mixer/params/param.rs
+  quoted_click:
+    value: 0.05
+    param: rust_home_mixer_quoted_click_weight
+    file: home-mixer/params/param.rs
+  quoted_vqv:
+    value: 0.0
+    param: rust_home_mixer_quoted_vqv_weight
+    file: home-mixer/params/param.rs
+  follow_author:
+    value: 4.0
+    param: rust_home_mixer_follow_author_weight
+    file: home-mixer/params/param.rs
+  post_unexplored:
+    value: 0.015
+    param: rust_home_mixer_post_unexplored_weight
+    file: home-mixer/params/param.rs
+  post_video:
+    value: 0.0
+    param: rust_home_mixer_post_video_weight
+    file: home-mixer/params/param.rs
+  grok_analyze:
+    value: 0.0
+    param: rust_home_mixer_grok_analyze_weight
+    file: home-mixer/params/param.rs
+  cont_dwell_time:
+    value: 0.0075
+    param: rust_home_mixer_cont_dwell_time_weight
+    file: home-mixer/params/param.rs
+  cont_click_dwell_time:
+    value: 0.385
+    param: rust_home_mixer_cont_click_dwell_time_weight
+    file: home-mixer/params/param.rs
+  not_interested:
+    value: -53.07
+    param: rust_home_mixer_not_interested_weight
+    file: home-mixer/params/param.rs
+  block_author:
+    value: -31.2
+    param: rust_home_mixer_block_author_weight
+    file: home-mixer/params/param.rs
+  mute_author:
+    value: -58.8
+    param: rust_home_mixer_mute_author_weight
+    file: home-mixer/params/param.rs
+  report:
+    value: -234.0
+    param: rust_home_mixer_report_weight
+    file: home-mixer/params/param.rs
+  not_dwelled:
+    value: -0.02
+    param: rust_home_mixer_not_dwelled_weight
+    file: home-mixer/params/param.rs
+
+# Situational boosts added to a base weight when the viewer and author follow
+# each other (see ValueModelWeights::reply_weight_for / dwell_weight_for in
+# xai-value-model/weights.rs).
+boosts:
+  bidirectional_follow_reply_weight_boost:
+    value: 15.0
+    param: rust_home_mixer_bidirectional_follow_reply_weight_boost
+    file: home-mixer/params/param.rs
+  bidirectional_follow_dwell_weight_boost:
+    value: 0.0
+    param: rust_home_mixer_bidirectional_follow_dwell_weight_boost
+    file: home-mixer/params/param.rs
+
+# Constant from xai-value-model/weights.rs (NEGATIVE_SCORES_OFFSET), used by
+# offset_score() in xai-value-model/scoring.rs to keep final scores positive.
+constants:
+  negative_scores_offset:
+    value: 0.001
+    param: NEGATIVE_SCORES_OFFSET
+    file: xai-value-model/weights.rs
+
+# Feature switches around the DPP (determinantal point process) diversity
+# re-ranker. These do not change a single post's weighted score; they control
+# how the already-scored slate is re-ordered for diversity.
+switches:
+  dpp_enabled:
+    value: true
+    param: rust_home_mixer_vm_ranker_dpp_enabled
+    file: vm-ranker/params.rs
+    note: "true since commit 1b3fec2 (2026-09-23), where the param was introduced"
+  topic_dpp_enabled:
+    value: false
+    param: rust_home_mixer_vm_ranker_topic_dpp_enabled
+    file: vm-ranker/params.rs
+  dpp_theta:
+    value: 0.65
+    param: rust_home_mixer_vm_ranker_dpp_theta
+    file: vm-ranker/params.rs
+  dpp_max_selected_rank:
+    value: 150
+    param: rust_home_mixer_vm_ranker_dpp_max_selected_rank
+    file: vm-ranker/params.rs
+  dpp_greedy_order:
+    value: false
+    param: rust_home_mixer_vm_ranker_dpp_greedy_order
+    file: vm-ranker/params.rs
+  dpp_window:
+    value: 0
+    param: rust_home_mixer_vm_ranker_dpp_window
+    file: vm-ranker/params.rs
+    note: "0 maps to window=None in vm-ranker/scoring/mod.rs, disabling the sliding-window DPP path"
+  dpp_window_half_distance:
+    value: 0.0
+    param: rust_home_mixer_vm_ranker_dpp_window_half_distance
+    file: vm-ranker/params.rs
+  vm_ranker_send_dpp_history:
+    value: true
+    param: rust_home_mixer_vm_ranker_send_dpp_history
+    file: home-mixer/params/param.rs
+    note: "flipped false -> true in commit 30647a8 (2026-11-14); introduced false in 590f392 (2026-11-13)"
+  vm_ranker_dpp_history_max_items:
+    value: 50
+    param: rust_home_mixer_vm_ranker_dpp_history_max_items
+    file: home-mixer/params/param.rs
+    note: "changed 200 -> 50 in commit 30647a8 (2026-11-14)"
