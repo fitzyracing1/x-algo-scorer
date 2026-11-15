@@ -1,0 +1,50 @@
+name: Issue scoring bot
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write # commit the stored submission / actuals
+  issues: write # post the breakdown comment
+
+jobs:
+  handle:
+    # Only "Score my post" issues (the form applies the label at creation),
+    # and never the bot's own comments.
+    if: >
+      contains(github.event.issue.labels.*.name, 'score-request') &&
+      !github.event.issue.pull_request &&
+      (github.event_name == 'issues' || github.event.comment.user.type != 'Bot')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: issue-scoring-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Handle the event
+        id: bot
+        run: python scripts/issue_bot.py --event "$GITHUB_EVENT_PATH" --out /tmp/comment.md
+      - name: Commit stored submission data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/submissions
+          if ! git diff --cached --quiet; then
+            git commit -m "Store submission data for issue #${{ github.event.issue.number }}"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Post the comment
+        if: steps.bot.outputs.has_comment == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue comment "${{ github.event.issue.number }}" --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.md

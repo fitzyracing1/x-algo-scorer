@@ -1,0 +1,46 @@
+name: Score my post
+description: >
+  Get a toy ranking-score breakdown for a post, computed from the public
+  x-algorithm weights. NOT a prediction -- the real ranker uses per-viewer
+  model probabilities nobody outside X has.
+title: "[score] "
+labels: ["score-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A bot will score your post with the mirrored public weights and comment
+        the breakdown here. The number is **rough at best**: it multiplies the
+        real weights by *your guessed* probabilities, not the per-viewer model
+        predictions the actual ranker uses.
+
+        After your post has been up for a while, comment on this issue with the
+        real numbers (e.g. `likes: 120, replies: 6, reposts: 14, quotes: 2,
+        impressions: 40000`) and the bot will store them for calibration.
+  - type: input
+    id: post-url
+    attributes:
+      label: Post URL
+      description: Link to the post on X (optional if you haven't posted it yet).
+      placeholder: "https://x.com/you/status/123456789"
+    validations:
+      required: false
+  - type: textarea
+    id: post-text
+    attributes:
+      label: Post text
+      description: The text of the post to score.
+    validations:
+      required: true
+  - type: textarea
+    id: probabilities
+    attributes:
+      label: Guessed probabilities (JSON, optional)
+      description: >
+        Your guesses for per-viewer engagement probabilities, e.g.
+        {"favorite": 0.03, "reply": 0.004, "report": 0.00002}.
+        Heads you omit use labeled made-up defaults.
+      render: json
+      placeholder: '{"favorite": 0.03, "reply": 0.004}'
+    validations:
+      required: false
