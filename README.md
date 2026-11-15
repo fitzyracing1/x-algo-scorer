@@ -34,6 +34,8 @@ currently does nothing. It will not tell you how your post will rank.
 | `.github/workflows/ci.yml` | Tests + end-to-end scoring smoke test |
 | `.github/workflows/sync-upstream.yml` | Daily upstream check; opens a PR when tracked values change |
 | `.github/workflows/score-post.yml` | `workflow_dispatch`: submit a post, get the breakdown in the job summary |
+| `.github/workflows/issue-scoring.yml` | Scores new "Score my post" issues and stores reported real engagement from comments |
+| `.github/ISSUE_TEMPLATE/score-my-post.yml` | Issue form: post URL, text, optional guessed probabilities |
 
 ## Quick start
 
@@ -123,9 +125,18 @@ that commit:
 
 ## Scoring via GitHub Actions
 
-Run the **Score a post** workflow (`workflow_dispatch`) with your text and
-optional probability guesses; the breakdown lands in the job summary. Check
-**save** to store the submission as `data/submissions/<id>.yml`.
+Two ways, both using only the repo's `GITHUB_TOKEN` (no secrets):
+
+- **Open an issue** with the [Score my post](../../issues/new?template=score-my-post.yml)
+  form (post URL, text, optional guessed probabilities as JSON). The bot
+  comments the full breakdown and stores the submission as
+  `data/submissions/issue-<N>.yml`. Later, comment on the same issue with the
+  real numbers — `likes: 120, replies: 6, reposts: 14, quotes: 2,
+  impressions: 40000` — and the bot stores them as actuals and replies with a
+  guessed-vs-observed comparison.
+- **Run the "Score a post" workflow** (`workflow_dispatch`) with your text and
+  optional probability guesses; the breakdown lands in the job summary. Check
+  **save** to store the submission as `data/submissions/<id>.yml`.
 
 ### Closing the loop: calibration
 
