@@ -55,6 +55,12 @@ ACTUALS_HINT = (
     "`likes: 120, replies: 6, reposts: 14, quotes: 2, impressions: 40000` "
     "and I will store them for calibration (impressions are needed to compute rates)."
 )
+AUTO_FETCH_HINT = (
+    "Since you provided the post URL, real engagement is fetched automatically "
+    "from the X API once a day (while the repo has the `X_BEARER_TOKEN` secret "
+    "configured). You can still comment numbers like "
+    "`likes: 120, replies: 6, reposts: 14` as a manual fallback."
+)
 
 
 def parse_issue_form(body: str) -> dict:
@@ -140,7 +146,10 @@ def handle_opened(issue: dict, data_dir: Path) -> str:
     )
 
     breakdown = format_breakdown(result, config, markdown=True)
-    return f"{breakdown}\n\n---\n\n{ACTUALS_HINT}"
+    hint = AUTO_FETCH_HINT if form.get("url") else (
+        ACTUALS_HINT + " Tip: include the post URL next time to enable automatic fetching."
+    )
+    return f"{breakdown}\n\n---\n\n{hint}"
 
 
 def handle_comment(issue: dict, comment: dict, data_dir: Path) -> str | None:

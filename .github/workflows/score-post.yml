@@ -7,6 +7,11 @@ on:
         description: "Post text to score"
         required: true
         type: string
+      url:
+        description: "Optional post URL on X (enables automatic actuals fetching)"
+        required: false
+        type: string
+        default: ""
       predictions:
         description: 'Optional JSON of guessed probabilities, e.g. {"favorite": 0.05, "reply": 0.004}'
         required: false
@@ -38,11 +43,13 @@ jobs:
       - name: Score the post
         env:
           POST_TEXT: ${{ inputs.text }}
+          POST_URL: ${{ inputs.url }}
           PREDICTIONS: ${{ inputs.predictions }}
           FLAGS: ${{ inputs.flags }}
           SAVE: ${{ inputs.save }}
         run: |
           args=(--text "$POST_TEXT" --markdown)
+          [ -n "$POST_URL" ] && args+=(--url "$POST_URL")
           [ -n "$PREDICTIONS" ] && args+=(--predictions "$PREDICTIONS")
           [ -n "$FLAGS" ] && args+=(--flags "$FLAGS")
           [ "$SAVE" = "true" ] && args+=(--save)

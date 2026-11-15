@@ -44,6 +44,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--flags", default="",
                         help='JSON object of flags, e.g. {"is_mutual_follow_author": true}')
     parser.add_argument("--save", action="store_true", help="store as data/submissions/<id>.yml")
+    parser.add_argument("--url", default="",
+                        help="post URL on X; enables automatic actuals fetching later")
     parser.add_argument("--id", help="submission id (default: date + text slug)")
     parser.add_argument("--markdown", action="store_true", help="emit markdown breakdown")
     args = parser.parse_args(argv)
@@ -71,6 +73,7 @@ def main(argv: list[str] | None = None) -> int:
         record = {
             "id": sub_id,
             "submitted_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "url": args.url or post.get("url", ""),
             "text": result.text,
             "predictions": post.get("predictions") or {},
             "flags": post.get("flags") or {},
