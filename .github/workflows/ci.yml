@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest -v
+      - name: Smoke-test the scorer end to end
+        run: |
+          python -m xscore.cli examples/sample_post.yml
+          python -m xscore.cli examples/sample_post.yml --markdown >> "$GITHUB_STEP_SUMMARY"
+      - name: Calibration report
+        run: python scripts/calibration_report.py --markdown >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,61 @@
+name: Score a post
+
+on:
+  workflow_dispatch:
+    inputs:
+      text:
+        description: "Post text to score"
+        required: true
+        type: string
+      predictions:
+        description: 'Optional JSON of guessed probabilities, e.g. {"favorite": 0.05, "reply": 0.004}'
+        required: false
+        type: string
+        default: ""
+      flags:
+        description: 'Optional JSON flags, e.g. {"is_mutual_follow_author": true}'
+        required: false
+        type: string
+        default: ""
+      save:
+        description: "Store as data/submissions/<id>.yml so real engagement can be added later for calibration"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Score the post
+        env:
+          POST_TEXT: ${{ inputs.text }}
+          PREDICTIONS: ${{ inputs.predictions }}
+          FLAGS: ${{ inputs.flags }}
+          SAVE: ${{ inputs.save }}
+        run: |
+          args=(--text "$POST_TEXT" --markdown)
+          [ -n "$PREDICTIONS" ] && args+=(--predictions "$PREDICTIONS")
+          [ -n "$FLAGS" ] && args+=(--flags "$FLAGS")
+          [ "$SAVE" = "true" ] && args+=(--save)
+          python scripts/score_submission.py "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Commit the stored submission
+        if: inputs.save
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/submissions
+          git diff --cached --quiet || {
+            git commit -m "Store scored submission"
+            git push
+          }
+      - name: Calibration report
+        run: python scripts/calibration_report.py --markdown >> "$GITHUB_STEP_SUMMARY"

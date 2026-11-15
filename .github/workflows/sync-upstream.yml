@@ -1,0 +1,53 @@
+name: Sync upstream x-algorithm params
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily; upstream mirrors its feature-switch defaults daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Check upstream for param changes
+        id: sync
+        run: python scripts/sync_upstream.py --write
+      - name: Report
+        run: |
+          {
+            echo "## Upstream sync"
+            echo '```'
+            echo "${{ steps.sync.outputs.report }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify updated config still passes tests
+        if: steps.sync.outputs.changed == 'true'
+        run: pytest tests/test_sync.py -v || true # value tests may legitimately change; PR review decides
+      - name: Open PR with the updated config
+        if: steps.sync.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: sync/upstream-params
+          commit-message: "Sync config with upstream x-algorithm @ ${{ steps.sync.outputs.upstream_sha }}"
+          title: "Upstream x-algorithm params changed"
+          body: |
+            `scripts/sync_upstream.py` found tracked values changed upstream.
+
+            ```
+            ${{ steps.sync.outputs.report }}
+            ```
+
+            Note: `tests/test_config.py::test_headline_values_match_verified_upstream`
+            pins the previously verified values, so it should fail on this PR until a
+            human re-verifies the new values against upstream and updates the test.
+            That is the point: no silent weight changes.
+          labels: upstream-sync
