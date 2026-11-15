@@ -1,0 +1,60 @@
+name: Fetch actuals from X
+
+# Daily cron: scripts/fetch_actuals.py snapshots each submission while it is
+# younger than 30 days and at most once per ~20h, so posts naturally get their
+# ~24h and ~72h snapshots. Runs green (and clearly says why) when the
+# X_BEARER_TOKEN secret is not configured.
+
+on:
+  schedule:
+    - cron: "37 9 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Fetch every submission with a post URL, ignoring age/gap limits"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # commit metric snapshots and updated submissions
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Fetch public_metrics
+        id: fetch
+        env:
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          args=()
+          [ "$FORCE" = "true" ] && args+=(--force)
+          python scripts/fetch_actuals.py "${args[@]}"
+      - name: Summary
+        run: |
+          {
+            echo "## Actuals fetch"
+            echo '```'
+            echo "${{ steps.fetch.outputs.report }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit snapshots
+        if: steps.fetch.outputs.fetched != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if ! git diff --cached --quiet; then
+            git commit -m "Snapshot X public_metrics for ${{ steps.fetch.outputs.fetched }} submission(s)"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Calibration report
+        run: python scripts/calibration_report.py --markdown >> "$GITHUB_STEP_SUMMARY"
