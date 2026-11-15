@@ -36,6 +36,8 @@ currently does nothing. It will not tell you how your post will rank.
 | `.github/workflows/score-post.yml` | `workflow_dispatch`: submit a post, get the breakdown in the job summary |
 | `.github/workflows/issue-scoring.yml` | Scores new "Score my post" issues and stores reported real engagement from comments |
 | `.github/ISSUE_TEMPLATE/score-my-post.yml` | Issue form: post URL, text, optional guessed probabilities |
+| `scripts/fetch_actuals.py` | Pulls real `public_metrics` from the X API v2 for submissions with a post URL |
+| `.github/workflows/fetch-actuals.yml` | Daily cron running the fetcher; skips cleanly when `X_BEARER_TOKEN` is not set |
 
 ## Quick start
 
@@ -140,23 +142,43 @@ Two ways, both using only the repo's `GITHUB_TOKEN` (no secrets):
 
 ### Closing the loop: calibration
 
-Stored submissions include an empty `actual:` block. After your post has been
-up for a while, fill in what it really got:
+Stored submissions include an `actual:` block with the real engagement the
+post got. It gets filled three ways, in order of preference:
 
-```yaml
-actual:
-  impressions: 2500
-  favorites: 60
-  replies: 7
-  reposts: 9
-  quotes: 1
-```
+1. **Automatically from the X API** (`fetch-actuals.yml`, daily): for every
+   submission with a post URL (or `tweet_id`), `scripts/fetch_actuals.py`
+   fetches `public_metrics` (`like_count`, `reply_count`, `retweet_count`,
+   `quote_count`, `bookmark_count`, and `impression_count` where the API
+   returns it) via `GET /2/tweets?ids=...&tweet.fields=public_metrics,created_at`,
+   batching up to 100 ids per call and backing off on rate limits. Each run
+   appends a timestamped snapshot to `data/metrics/<submission-id>.yml`
+   (daily snapshots give you the ~24h and ~72h marks; fetching stops after
+   30 days) and copies the newest counts into the submission's `actual:`.
+2. **Manually via issue comments**: comment `likes: 120, replies: 6,
+   reposts: 14, quotes: 2, impressions: 40000` on the submission's issue.
+   This remains the fallback when no token is configured; fresher API data
+   overwrites it.
+3. **By editing the YAML directly.**
 
 Then `python scripts/calibration_report.py` compares your guessed
 probabilities against the observed per-impression rates and tells you how far
 off your guesses run, head by head. (Per-impression rates are themselves only
 a proxy for the per-viewer probabilities the real models predict — the report
 says so, because that is the honest caveat.)
+
+#### Setting up the `X_BEARER_TOKEN` secret
+
+The fetcher needs an X API v2 bearer token with read access:
+
+1. Create (or reuse) an app in the [X developer portal](https://developer.x.com/en/portal/dashboard)
+   and copy its **Bearer Token**. The free tier's tweet-lookup quota is very
+   limited but sufficient for a handful of submissions per day.
+2. In this repo: **Settings → Secrets and variables → Actions → New repository
+   secret**, name `X_BEARER_TOKEN`, paste the token.
+
+Without the secret the scheduled workflow still runs green — it prints that
+it is skipping and reminds you that manual comments keep working. The token is
+only ever sent in the `Authorization` header and never appears in logs.
 
 ## Staying in sync with upstream
 
