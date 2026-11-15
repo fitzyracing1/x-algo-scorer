@@ -1,0 +1,24 @@
+# SYNTHETIC demo submission so the file format and the calibration report are
+# visible. The engagement numbers below are invented, not from a real post.
+# Real submissions get created by the "Score a post" workflow (or
+# scripts/score_submission.py --save); you then edit the `actual:` block with
+# the numbers the post really got.
+id: 20261115-000000-synthetic-example
+submitted_at: "2026-11-15T00:00:00Z"
+text: "Synthetic example post: pretend this went out and got the numbers below."
+predictions:
+  favorite: 0.03
+  reply: 0.004
+  retweet: 0.005
+  quote: 0.001
+flags: {}
+score:
+  weighted_sum: 0.06894
+  final_score: 0.06994
+  config_commit: 30647a85a20cbdd114169beb9973680c4dc4f401
+actual:
+  impressions: 2500
+  favorites: 60
+  replies: 7
+  reposts: 9
+  quotes: 1
