@@ -10,9 +10,9 @@
 
 source:
   repo: https://github.com/xai-org/x-algorithm
-  commit: 30647a85a20cbdd114169beb9973680c4dc4f401
-  commit_date: "2026-11-14"
-  synced_at: "2026-11-15"
+  commit: 52d45989090e63992ba04e4f6cfccd73bf8cc05c
+  commit_date: "2026-11-25"
+  synced_at: "2026-11-28"
   files:
     - home-mixer/params/param.rs   # engagement weights, VMRanker* switches
     - vm-ranker/params.rs          # Dpp* switches
@@ -67,7 +67,7 @@ weights:
     param: rust_home_mixer_share_via_dm_weight
     file: home-mixer/params/param.rs
   share_via_copy_link:
-    value: 0.0
+    value: 20.0
     param: rust_home_mixer_share_via_copy_link_weight
     file: home-mixer/params/param.rs
   dwell:
@@ -187,7 +187,7 @@ switches:
     param: rust_home_mixer_vm_ranker_dpp_window_half_distance
     file: vm-ranker/params.rs
   vm_ranker_send_dpp_history:
-    value: true
+    value: false
     param: rust_home_mixer_vm_ranker_send_dpp_history
     file: home-mixer/params/param.rs
     note: "flipped false -> true in commit 30647a8 (2026-11-14); introduced false in 590f392 (2026-11-13)"
